@@ -72,6 +72,13 @@ func handleDriversWebSocket(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer func() {
+		driverService.Client.UnregisterDriver(ctx, &driver.UnregisterDriverRequest{
+			DriverID: userID,
+		})
+		driverService.Close()
+		log.Println("Driver has been unregistered", userID)
+	}()
 
 	driverData, err := driverService.Client.RegisterDriver(ctx, &driver.RegisterDriverRequest{
 		DriverID:    userID,
@@ -81,14 +88,6 @@ func handleDriversWebSocket(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("Error registering driver: %v", err)
 		return
-	}
-
-	type Driver struct {
-		Id             string `json:"id"`
-		Name           string `json:"name"`
-		ProfilePicture string `json:"profilePicture"`
-		CarPlate       string `json:"carPlate"`
-		packageSlug    string `json:"packageSlug"`
 	}
 
 	msg := contracts.WSMessage{

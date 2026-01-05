@@ -34,9 +34,9 @@ message Location {
 }
 
 message UnregisterDriverRequest {
-
+    string driverID = 1;
 }
 
 message UnregisterDriverResponse {
-    
+    string driverID = 1;
 }

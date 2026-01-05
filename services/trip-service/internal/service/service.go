@@ -83,6 +83,7 @@ func (s *service) GenerateTripFares(ctx context.Context, rideFares []*domain.Rid
 			ID:                id,
 			TotalPriceInCents: f.TotalPriceInCents,
 			PackageSlug:       f.PackageSlug,
+			Route:             route,
 		}
 
 		if err := s.repo.SaveRideFare(ctx, fare); err != nil {
@@ -125,8 +126,11 @@ func (s *service) estimateFareRoute(f *domain.RideFareModel, route *tripTypes.Os
 	totalPrice := carPackagePrice + distanceFare + timeFare
 
 	return &domain.RideFareModel{
+		UserID:            f.UserID,
+		ID:                f.ID,
 		PackageSlug:       f.PackageSlug,
 		TotalPriceInCents: totalPrice,
+		Route:             route,
 	}
 
 }

@@ -2,8 +2,8 @@ package grpc
 
 import (
 	"context"
-	"log"
 	"ride-sharing/services/trip-service/internal/domain"
+	"ride-sharing/services/trip-service/internal/infrastructure/events"
 	pb "ride-sharing/shared/proto/trip"
 	"ride-sharing/shared/types"
 
@@ -14,12 +14,14 @@ import (
 
 type gRPCHandler struct {
 	pb.UnimplementedTripServiceServer
-	service domain.TripService
+	service   domain.TripService
+	publisher *events.TripEventPublisher
 }
 
-func NewGrpcHandler(server *grpc.Server, service domain.TripService) *gRPCHandler {
+func NewGrpcHandler(server *grpc.Server, service domain.TripService, publisher *events.TripEventPublisher) *gRPCHandler {
 	handler := &gRPCHandler{
-		service: service,
+		service:   service,
+		publisher: publisher,
 	}
 
 	pb.RegisterTripServiceServer(server, handler)
@@ -50,7 +52,6 @@ func (h *gRPCHandler) PreviewTrip(ctx context.Context, req *pb.PreviewTripReques
 	estimatedFares := h.service.EstimatePackagesPriceWithRoute(route)
 
 	fares, err := h.service.GenerateTripFares(ctx, estimatedFares, userId, route)
-	log.Println(&fares, "logging fares in here....")
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Failed to get generate ride fares: %v", err)
 	}
@@ -62,7 +63,7 @@ func (h *gRPCHandler) PreviewTrip(ctx context.Context, req *pb.PreviewTripReques
 
 }
 
-func (h *gRPCHandler) TripStart(ctx context.Context, req *pb.CreateTripRequest) (*pb.CreateTripResponse, error) {
+func (h *gRPCHandler) CreateTrip(ctx context.Context, req *pb.CreateTripRequest) (*pb.CreateTripResponse, error) {
 	fareID := req.GetRideFareId()
 	userID := req.GetUserId()
 
@@ -76,6 +77,10 @@ func (h *gRPCHandler) TripStart(ctx context.Context, req *pb.CreateTripRequest) 
 		return nil, status.Errorf(codes.Internal, "Failed to create a trip: %v", err)
 	}
 
+	err = h.publisher.PublishTripCreated(ctx, trip)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "Failed to Send a Rabbit MQ message: %v", err)
+	}
 	return &pb.CreateTripResponse{
 		TripID: trip.ID.Hex(),
 	}, nil

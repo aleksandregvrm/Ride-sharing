@@ -64,8 +64,8 @@ func handleTripStart(w http.ResponseWriter, r *http.Request) {
 
 	defer tripService.Close()
 
-	tripStart, err := tripService.Client.TripStart(r.Context(), reqBody.ToProto())
-
+	tripStart, err := tripService.Client.CreateTrip(r.Context(), reqBody.ToProto())
+	log.Println(tripStart, "logging trip start in here...")
 	if err != nil {
 		log.Printf("There has been with retrieving the trips, %v", err)
 		http.Error(w, "Failed to start the trip", http.StatusInternalServerError)
