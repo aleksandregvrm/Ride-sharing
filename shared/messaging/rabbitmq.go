@@ -136,6 +136,22 @@ func (r *RabbitMQ) setupExchangesAndQueues() error {
 		return fmt.Errorf("Failed to declare and Bind a Queue: %s, : %v", TripExchange, err)
 	}
 
+	if err := r.declareAndBindQueue(DriverCmdTripRequestQueue, []string{contracts.DriverCmdTripRequest}, TripExchange); err != nil {
+		return fmt.Errorf("Failed to declare and Bind a Queue: %s, : %v", TripExchange, err)
+	}
+
+	if err := r.declareAndBindQueue(DriverTripResponseQueue, []string{contracts.DriverCmdTripAccept, contracts.DriverCmdTripDecline}, TripExchange); err != nil {
+		return fmt.Errorf("Failed to declare and Bind a Queue: %s, : %v", TripExchange, err)
+	}
+
+	if err := r.declareAndBindQueue(NotifyDriverNoDriversFoundQueue, []string{contracts.TripEventNoDriversFound}, TripExchange); err != nil {
+		return fmt.Errorf("Failed to declare and Bind a Queue: %s, : %v", TripExchange, err)
+	}
+
+	if err := r.declareAndBindQueue(NotifyDriverAssignQueue, []string{contracts.TripEventDriverAssigned}, TripExchange); err != nil {
+		return fmt.Errorf("Failed to declare and Bind a Queue: %s, : %v", TripExchange, err)
+	}
+
 	return nil
 }
 

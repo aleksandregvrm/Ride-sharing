@@ -50,6 +50,10 @@ func main() {
 
 	publisher := events.NewTripEventPublisher(rabbitMq)
 
+	driverConsumer := events.NewDriverConsumer(rabbitMq, svc)
+
+	go driverConsumer.Listen()
+
 	log.Println("Starting Rabbit MQ server")
 	// Launching the Grpc server with the trip service as a dependency
 	grpcServer := grpcserver.NewServer()

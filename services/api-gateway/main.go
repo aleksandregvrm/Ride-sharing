@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"ride-sharing/shared/env"
+	"ride-sharing/shared/messaging"
 )
 
 var (
@@ -17,14 +18,29 @@ var (
 )
 
 func main() {
+	rabbitMQUri := env.GetString("RABBITMQ_URI", "amqp://guest:guest@rabbitmq:5672/")
+
+	// Connecting Rabbit MQ server...
+	rabbitMq, err := messaging.NewRabbitMQ(rabbitMQUri)
+	if err != nil {
+		log.Fatalf("An error has occurred when starting a grpc server: %v", err)
+	}
+
+	log.Println("Starting Rabbit MQ server")
+	defer rabbitMq.Close()
+
 	log.Println("Starting API Gateway")
 
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("POST /trip/preview", enableCORS(handleTripPreview))
 	mux.HandleFunc("POST /trip/start", enableCORS(handleTripStart))
-	mux.HandleFunc("/ws/drivers", enableCORS(handleDriversWebSocket))
-	mux.HandleFunc("/ws/riders", enableCORS(handleRidersWebsocket))
+	mux.HandleFunc("/ws/drivers", enableCORS(func(w http.ResponseWriter, r *http.Request) {
+		handleDriversWebSocket(w, r, rabbitMq)
+	}))
+	mux.HandleFunc("/ws/riders", enableCORS(func(w http.ResponseWriter, r *http.Request) {
+		handleRidersWebsocket(w, r, rabbitMq)
+	}))
 
 	server := &http.Server{
 		Addr:    httpAddr,

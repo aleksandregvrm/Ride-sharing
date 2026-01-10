@@ -43,7 +43,7 @@ func main() {
 	log.Println("Starting Rabbit MQ server")
 	defer rabbitMq.Close()
 
-	consumer := NewTripConsumer(rabbitMq)
+	consumer := NewTripConsumer(rabbitMq, service)
 
 	go func() {
 		if err := consumer.Listen(); err != nil {
