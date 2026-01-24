@@ -6,12 +6,15 @@ import (
 )
 
 const (
-	FindAvailableDriversQueue       = "find_available_drivers"
-	NotifyNewTripQueue              = "notify_new_trip"
-	DriverCmdTripRequestQueue       = "driver_cmd_trip_request"
-	DriverTripResponseQueue         = "driver_trip_response"
-	NotifyDriverNoDriversFoundQueue = "notify_driver_no_drivers_found"
-	NotifyDriverAssignQueue         = "notify_driver_assign"
+	FindAvailableDriversQueue        = "find_available_drivers"
+	NotifyNewTripQueue               = "notify_new_trip"
+	DriverCmdTripRequestQueue        = "driver_cmd_trip_request"
+	DriverTripResponseQueue          = "driver_trip_response"
+	NotifyDriverNoDriversFoundQueue  = "notify_driver_no_drivers_found"
+	NotifyDriverAssignQueue          = "notify_driver_assign"
+	PaymentTripResponseQueue         = "payment_trip_response"
+	NotifyPaymentSessionCreatedQueue = "notify_payment_session_created"
+	NotifyPaymentSuccessQueue        = "payment_success"
 )
 
 type TripEventData struct {
@@ -22,4 +25,25 @@ type DriverTripResponseData struct {
 	Driver  *pbd.Driver `json:"driver"`
 	TripID  string      `json:"tripId"`
 	RiderID string      `json:"rideId"`
+}
+
+type PaymentEventSessionCreatedData struct {
+	TripID    string  `json:"tripID"`
+	SessionID string  `json:"sessionID"`
+	Amount    float64 `json:"amount"`
+	Currency  string  `json:"currency"`
+}
+
+type PaymentTripResponseData struct {
+	TripID   string  `json:"tripID"`
+	UserID   string  `json:"userID"`
+	DriverID string  `json:"driverID"`
+	Amount   float64 `json:"amount"`
+	Currency string  `json:"currency"`
+}
+
+type PaymentStatusUpdateData struct {
+	TripID   string `json:"tripID"`
+	UserID   string `json:"userID"`
+	DriverID string `json:"driverID"`
 }

@@ -35,7 +35,7 @@ func handleRidersWebsocket(w http.ResponseWriter, r *http.Request, rb *messaging
 	defer connManager.Remove(userID)
 
 	// Initialize queue consumers.
-	queues := []string{messaging.NotifyDriverNoDriversFoundQueue, messaging.NotifyDriverAssignQueue}
+	queues := []string{messaging.NotifyDriverNoDriversFoundQueue, messaging.NotifyDriverAssignQueue, messaging.NotifyPaymentSessionCreatedQueue}
 
 	for _, q := range queues {
 		consumer := messaging.NewQueueConsumer(rb, connManager, q)
