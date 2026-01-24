@@ -50,7 +50,10 @@ func (c *driverConsumer) Listen() error {
 				return err
 			}
 		case contracts.DriverCmdTripDecline:
-			log.Println("Declined")
+			if err := c.handleTripDeclined(ctx, payload.TripID, payload.RiderID); err != nil {
+				log.Printf("Failed to handle the trip decline: %v", err)
+				return err
+			}
 			return nil
 		}
 
@@ -96,8 +99,54 @@ func (c *driverConsumer) handleTripAccepted(ctx context.Context, tripID string, 
 		return err
 	}
 
+	marshalledPayload, err := json.Marshal(messaging.PaymentTripResponseData{
+		TripID:   tripID,
+		UserID:   trip.UserID,
+		DriverID: driver.Id,
+		Amount:   trip.RideFare.TotalPriceInCents,
+		Currency: "USD",
+	})
+
+	if err := c.rabbitmq.PublishMessage(ctx, contracts.PaymentCmdCreateSession,
+		contracts.AmqpMessage{
+			OwnerID: trip.UserID,
+			Data:    marshalledPayload,
+		},
+	); err != nil {
+		return err
+	}
+
 	// Notify payment service to start the a payment link
 
 	log.Printf("Driver: %s, has been assigned to the trip: %s", driver.Id, tripID)
+	return nil
+}
+
+func (c *driverConsumer) handleTripDeclined(ctx context.Context, tripID, riderID string) error {
+	// When a driver declines, we should try to find another driver
+
+	trip, err := c.service.GetTripByID(ctx, tripID)
+	if err != nil {
+		return err
+	}
+
+	newPayload := messaging.TripEventData{
+		Trip: trip.ToProto(),
+	}
+
+	marshalledPayload, err := json.Marshal(newPayload)
+	if err != nil {
+		return err
+	}
+
+	if err := c.rabbitmq.PublishMessage(ctx, contracts.TripEventDriverNotInterested,
+		contracts.AmqpMessage{
+			OwnerID: riderID,
+			Data:    marshalledPayload,
+		},
+	); err != nil {
+		return err
+	}
+
 	return nil
 }

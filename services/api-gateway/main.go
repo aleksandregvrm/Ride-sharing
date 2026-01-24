@@ -41,6 +41,9 @@ func main() {
 	mux.HandleFunc("/ws/riders", enableCORS(func(w http.ResponseWriter, r *http.Request) {
 		handleRidersWebsocket(w, r, rabbitMq)
 	}))
+	mux.HandleFunc("/webhook/stripe", func(w http.ResponseWriter, r *http.Request) {
+		handleStripeWebhook(w, r, rabbitMq)
+	})
 
 	server := &http.Server{
 		Addr:    httpAddr,

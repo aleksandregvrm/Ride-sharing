@@ -52,6 +52,10 @@ func main() {
 
 	driverConsumer := events.NewDriverConsumer(rabbitMq, svc)
 
+	paymentConsumer := events.NewPaymentConsumer(rabbitMq, svc)
+
+	go paymentConsumer.Listen()
+
 	go driverConsumer.Listen()
 
 	log.Println("Starting Rabbit MQ server")
