@@ -13,6 +13,7 @@ import (
 	"ride-sharing/services/payment-service/pkg/types"
 	"ride-sharing/shared/env"
 	"ride-sharing/shared/messaging"
+	"ride-sharing/shared/tracing"
 )
 
 var GrpcAddr = env.GetString("GRPC_ADDR", ":9004")
@@ -20,8 +21,24 @@ var GrpcAddr = env.GetString("GRPC_ADDR", ":9004")
 func main() {
 	rabbitMqURI := env.GetString("RABBITMQ_URI", "amqp://guest:guest@rabbitmq:5672/")
 
-	// Setup graceful shutdown
+	// Initialize tracing
+	tracerCfg := tracing.Config{
+		ServiceName:    "payment-service",
+		Environment:    env.GetString("ENVIRONMENT", "development"),
+		JaegerEndpoint: env.GetString("JAEGER_ENDPOINT", "development"),
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
+
+	shDown, err := tracing.InitTracer(tracerCfg)
+	if err != nil {
+		log.Fatalf("Failed to Initialize the tracer, %v", err)
+	}
+
+	defer cancel()
+	defer shDown(ctx)
+
+	// Setup graceful shutdown
 	defer cancel()
 
 	go func() {

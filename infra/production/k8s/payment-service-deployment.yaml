@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: payment-service
-          image: ride-sharing/payment-service
+          image: europe-west1-docker.pkg.dev/{{PROJECT_ID}}/ride-sharing/payment-service
           ports:
             - containerPort: 9004
           resources:
@@ -27,6 +27,13 @@ spec:
               memory: "128Mi"
               cpu: "200m"
           env:
+            # Stripe credentials
+            - name: STRIPE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stripe-secrets
+                  key: stripe-secret-key
+
             - name: STRIPE_SUCCESS_URL
               valueFrom:
                 configMapKeyRef:
@@ -38,25 +45,19 @@ spec:
                   name: app-config
                   key: STRIPE_CANCEL_URL
 
-            - name: JAEGER_ENDPOINT
-              valueFrom:
-                configMapKeyRef:
-                  name: app-config
-                  key: JAEGER_ENDPOINT
-
-            # Stripe credentials
-            - name: STRIPE_SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: stripe-secrets
-                  key: stripe-secret-key
-
             # RabbitMQ credentials
             - name: RABBITMQ_URI
               valueFrom:
                 secretKeyRef:
                   name: rabbitmq-credentials
                   key: uri
+
+            # Jaeger endpoint
+            - name: JAEGER_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: JAEGER_ENDPOINT
 ---
 apiVersion: v1
 kind: Service

@@ -14,7 +14,20 @@ spec:
     spec:
       containers:
         - name: driver-service
-          image: ride-sharing/driver-service
+          image: europe-west1-docker.pkg.dev/{{PROJECT_ID}}/ride-sharing/driver-service
+          env:
+            # Jaeger endpoint
+            - name: JAEGER_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: JAEGER_ENDPOINT
+            # RabbitMQ credentials
+            - name: RABBITMQ_URI
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: uri
           ports:
             - containerPort: 9092
           resources:
@@ -24,27 +37,16 @@ spec:
             limits:
               memory: "128Mi"
               cpu: "200m"
-      env:
-        - name: RABBITMQ_DEFAULT_USER
-          valueFrom:
-            secretKeyRef:
-              name: rabbitmq-credentials
-              key: username
-        - name: JAEGER_ENDPOINT
-          valueFrom:
-            configMapKeyRef:
-            name: JAEGER_ENDPOINT
-            key: app-config
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: driver-service
 spec:
-  type: ClusterIP
+  selector:
+    app: driver-service
   ports:
     - port: 9092
       name: grpc
       targetPort: 9092
-  selector:
-    app: driver-service
+  type: ClusterIP
