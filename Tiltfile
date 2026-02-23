@@ -140,6 +140,12 @@ docker_build_with_restart(
     sync('./shared', '/app/shared'),
   ],
 )
+### End of Payment service ###
+
+### Jaeger ###
+k8s_yaml('./infra/development/k8s/jaeger.yaml')
+k8s_resource('jaeger', port_forwards=['16686:16686', '14268:14268'], labels="tooling")
+### End of Jaeger ###
 
 k8s_yaml('./infra/development/k8s/payment-service-deployment.yaml')
 k8s_resource('payment-service', resource_deps=['payment-service-compile', 'rabbitmq'], labels="services")

@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"ride-sharing/shared/env"
 	"ride-sharing/shared/messaging"
+	"ride-sharing/shared/tracing"
 	"syscall"
 
 	grpcserver "google.golang.org/grpc"
@@ -17,7 +18,23 @@ var GrpcAddr = ":9092"
 
 func main() {
 	rabbitMQUri := env.GetString("RABBITMQ_URI", "amqp://guest:guest@rabbitmq:5672/")
+
+	// Initialize tracing
+	tracerCfg := tracing.Config{
+		ServiceName:    "driver-service",
+		Environment:    env.GetString("ENVIRONMENT", "development"),
+		JaegerEndpoint: env.GetString("JAEGER_ENDPOINT", "development"),
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
+
+	shDown, err := tracing.InitTracer(tracerCfg)
+	if err != nil {
+		log.Fatalf("Failed to Initialize the tracer, %v", err)
+	}
+
+	defer cancel()
+	defer shDown(ctx)
 
 	defer cancel()
 
@@ -51,7 +68,7 @@ func main() {
 		}
 	}()
 	// Launching the Grpc server with the Driver service as a dependency
-	grpcServer := grpcserver.NewServer()
+	grpcServer := grpcserver.NewServer(tracing.WithTracingInterceptors()...)
 
 	newGrpcHandler(grpcServer, service)
 
